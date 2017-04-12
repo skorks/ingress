@@ -92,14 +92,16 @@ RSpec.describe Ingress do
     define_role_permissions :cooker, CookerPermissions
     define_role_permissions :cleaner, CleanerPermissions
 
-    # delegate :role_identifiers, to: :user, prefix: true
+    def user_role_identifiers
+      user.role_identifiers
+    end
   end
 
   describe "when user has no role" do
     let(:user) { TestUser.new(id: 5, role_identifiers: []) }
     let(:permissions) { TestUserPermissions.new(user) }
 
-    it "user is not able to things not defined for role" do
+    it "user is not able to do things not defined for role" do
       expect(permissions.can?(:create, :member_stuff)).to be_falsy
     end
   end

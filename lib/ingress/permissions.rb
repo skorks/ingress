@@ -1,4 +1,7 @@
-# base class for all permissions
+require "ingress/permissions_repository"
+require "ingress/copy_permissions_repository_into_role"
+require "ingress/build_permissions_repository_for_role"
+
 module Ingress
   class Permissions
     class << self

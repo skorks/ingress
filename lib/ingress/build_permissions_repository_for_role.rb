@@ -1,5 +1,5 @@
-# take a block that defines permissions and create a permission
-# repository out of it
+require "ingress/permissions_dsl"
+
 module Ingress
   module Services
     class BuildPermissionsRepositoryForRole

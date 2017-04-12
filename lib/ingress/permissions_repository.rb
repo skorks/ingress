@@ -1,4 +1,5 @@
-# data structure to store all the permission rules against roles
+require "ingress/permission_rule"
+
 module Ingress
   class PermissionsRepository
     attr_reader :role_rules

@@ -1,5 +1,5 @@
-# the public interface of this class defines the dsl you can use to define
-# permissions
+require "ingress/permissions_repository"
+
 module Ingress
   class PermissionsDsl
     attr_reader :role_identifier, :permission_repository

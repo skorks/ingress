@@ -1,4 +1,3 @@
-# a rule that defines one permission, it's agnostic of role
 module Ingress
   class PermissionRule
     attr_reader :action, :subject, :conditions

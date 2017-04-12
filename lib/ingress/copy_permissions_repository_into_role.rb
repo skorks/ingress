@@ -1,5 +1,5 @@
-# take an existing permissions repository and copy all rules from there into
-# another repository under a particular role
+require "ingress/permissions_repository"
+
 module Ingress
   module Services
     class CopyPermissionsRepositoryIntoRole
