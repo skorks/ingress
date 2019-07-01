@@ -21,7 +21,6 @@ module Ingress
       rules += find_rules(role_identifier, "*", "*")
       rules += find_rules(role_identifier, action, "*")
       rules += find_rules(role_identifier, "*", subject)
-      rules = apply_negative_rules(rules)
 
       rules
     end
@@ -45,17 +44,6 @@ module Ingress
     end
 
     private
-
-    def apply_negative_rules(rules)
-      # remove rules that cancel each other out since we're within the
-      # context of 1 role, i.e. if any rule is a negation it will
-      # cancel all other ones
-      if rules.any? { |rule| !rule.allows? }
-        []
-      else
-        rules
-      end
-    end
 
     def find_rules(role_identifier, action, subject)
       rules = []

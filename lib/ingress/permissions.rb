@@ -43,22 +43,22 @@ module Ingress
     end
 
     def can?(action, subject)
-      find_matching_rules(action, subject).any? do |rule|
-        rule.match?(action, subject, user)
+      user_role_identifiers.any? do |role_identifier|
+        rules = self.class.permissions_repository.rules_for(role_identifier, action, subject)
+
+        cannot_match = rules.reject(&:allows?).any? do |rule|
+          rule.match?(action, subject, user)
+        end
+        break false if cannot_match
+
+        rules.select(&:allows?).any? do |rule|
+          rule.match?(action, subject, user)
+        end
       end
     end
 
     def user_role_identifiers
       []
-    end
-
-    private
-
-    def find_matching_rules(action, subject)
-      user_role_identifiers.reduce([]) do |rules, role_identifier|
-        rules += self.class.permissions_repository.rules_for(role_identifier, action, subject)
-        rules
-      end
     end
   end
 end

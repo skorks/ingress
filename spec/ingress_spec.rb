@@ -1,4 +1,5 @@
 require "spec_helper"
+require "securerandom"
 
 RSpec.describe Ingress do
   class TestUser
@@ -11,11 +12,12 @@ RSpec.describe Ingress do
   end
 
   class TestObject
-    attr_reader :id, :user_id
+    attr_reader :id, :user_id, :read_only
 
-    def initialize(id: nil, user_id: nil)
+    def initialize(id: nil, user_id: nil, read_only: false)
       @id = id
       @user_id = user_id
+      @read_only = read_only
     end
   end
 
@@ -49,6 +51,7 @@ RSpec.describe Ingress do
           can :destroy, TestObject
 
           can :update, TestObject, if: -> (user, object) { user.id == object.user_id }
+          cannot %i[update destroy], TestObject, if: -> (user, object) { object.read_only }
         end
       end
     end
@@ -107,6 +110,15 @@ RSpec.describe Ingress do
 
         it "user is able to do action defined for role" do
           expect(permissions.can?(:update, test_object)).to be_truthy
+        end
+      end
+
+      context "when cannot conditions will match" do
+        let(:user) { TestUser.new(id: 5, role_identifiers: [:member]) }
+        let(:test_object) { TestObject.new(id: 88, user_id: 5, read_only: true) }
+
+        it "user is not able to do action" do
+          expect(permissions.can?(:update, test_object)).to be_falsy
         end
       end
 
