@@ -12,6 +12,10 @@ Gem::Specification.new do |spec|
   spec.summary       = %q{Simple role based authorization for Ruby applications}
   spec.homepage      = ""
   spec.license       = "MIT"
+  spec.metadata      = {
+                         "bug_tracker_uri" => "https://github.com/skorks/ingress/issues",
+                         "source_code_uri" => "https://github.com/skorks/ingress",
+                       }
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   spec.bindir        = "bin"
