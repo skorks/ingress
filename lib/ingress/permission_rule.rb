@@ -13,11 +13,11 @@ module Ingress
       @allows
     end
 
-    def match?(given_action, given_subject, user)
+    def match?(given_action, given_subject, user, options = {})
       return false unless action_matches?(given_action)
       return false unless subject_matches?(given_subject)
 
-      conditions_match?(user, given_subject)
+      conditions_match?(user, given_subject, options)
     end
 
     private
@@ -35,9 +35,13 @@ module Ingress
         "*" == subject
     end
 
-    def conditions_match?(user, given_subject)
+    def conditions_match?(user, given_subject, options)
       conditions.all? do |condition|
-        condition.call(user, given_subject)
+        if condition.arity == 2
+          condition.call(user, given_subject)
+        else
+          condition.call(user, given_subject, options)
+        end
       end
     rescue => e
       log_error(e)

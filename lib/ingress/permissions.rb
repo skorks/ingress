@@ -42,17 +42,17 @@ module Ingress
       @user = user
     end
 
-    def can?(action, subject)
+    def can?(action, subject, options = {})
       user_role_identifiers.any? do |role_identifier|
         rules = self.class.permissions_repository.rules_for(role_identifier, action, subject)
 
         cannot_match = rules.reject(&:allows?).any? do |rule|
-          rule.match?(action, subject, user)
+          rule.match?(action, subject, user, options)
         end
         break false if cannot_match
 
         rules.select(&:allows?).any? do |rule|
-          rule.match?(action, subject, user)
+          rule.match?(action, subject, user, options)
         end
       end
     end
