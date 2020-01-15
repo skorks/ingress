@@ -35,8 +35,14 @@ module Ingress
         "*" == subject
     end
 
+    def subject_class?(subject)
+      [Class, Module].include? subject.class
+    end
+
     def conditions_match?(user, given_subject, options)
       conditions.all? do |condition|
+        next true if subject_class?(given_subject) && subject_class?(@subject)
+
         if condition.arity == 2
           condition.call(user, given_subject)
         else

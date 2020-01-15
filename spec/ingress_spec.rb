@@ -435,6 +435,11 @@ RSpec.describe Ingress do
       it "user is not able to do any action on a thing where the condition is not met" do
         expect(permissions.can?(:foo, TestObject.new(id: 4))).to be_falsy
       end
+
+      it "should be able to do action if Class is provided" do
+        expect(permissions.can?(:with_block, TestObject)).to be_truthy
+      end
+
     end
 
     context "differing styles of defining conditions" do
