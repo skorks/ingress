@@ -16,6 +16,7 @@ module Ingress
     def match?(given_action, given_subject, user, options = {})
       return false unless action_matches?(given_action)
       return false unless subject_matches?(given_subject)
+      return true if ignore_conditions?(given_subject)
 
       conditions_match?(user, given_subject, options)
     end
@@ -33,6 +34,14 @@ module Ingress
         given_subject.class == subject ||
         given_subject == "*" ||
         "*" == subject
+    end
+
+    def ignore_conditions?(given_subject)
+      subject_class?(given_subject) && subject_class?(@subject)
+    end
+
+    def subject_class?(subject)
+      [Class, Module].include? subject.class
     end
 
     def conditions_match?(user, given_subject, options)
