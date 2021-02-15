@@ -51,8 +51,8 @@ RSpec.describe Ingress do
           can :create, TestObject
           can :destroy, TestObject
 
-          can :update, TestObject, if: -> (user, object) { user.id == object.user_id }
-          cannot %i[update destroy], TestObject, if: -> (user, object) { object.read_only }
+          can :update, TestObject, if: -> (user, object) { user.id == object.user_id unless object.is_a?(Class) }
+          cannot %i[update destroy], TestObject, if: -> (user, object) { object.read_only unless object.is_a?(Class)}
           cannot '*', '*', if: -> (user, _object) { user.disabled }
         end
       end
@@ -391,8 +391,8 @@ RSpec.describe Ingress do
             record.is_a?(Class) ? true : (record.kind_of?(TestObject) && record.id == 5)
           end
 
-          can "*", :with_if_style, if: -> (user, record) { record.kind_of?(TestObject) && record.id == 5 }
-          can "*", :with_block do |user, record|
+          can "*", :with_if_style, if: -> (_user, _action, record) { record.kind_of?(TestObject) && record.id == 5 }
+          can "*", :with_block do |_user, _action, record|
             record.kind_of?(TestObject) && record.id == 5
           end
         end
@@ -445,19 +445,19 @@ RSpec.describe Ingress do
 
     context "differing styles of defining conditions" do
       it "permits when defined with an if: condition" do
-        expect(permissions.can?(:with_if_style, TestObject.new(id: 5))).to be_truthy
+        expect(permissions.can?(:foo, :with_if_style, TestObject.new(id: 5))).to be_truthy
       end
 
       it "permits when defined with a block condition" do
-        expect(permissions.can?(:with_block, TestObject.new(id: 5))).to be_truthy
+        expect(permissions.can?(:foo, :with_block, TestObject.new(id: 5))).to be_truthy
       end
 
       it "denies when defined with an if: condition" do
-        expect(permissions.can?(:with_if_style, TestObject.new(id: 4))).to be_falsy
+        expect(permissions.can?(:foo, :with_if_style, TestObject.new(id: 4))).to be_falsy
       end
 
       it "denies when defined with a block condition" do
-        expect(permissions.can?(:with_block, TestObject.new(id: 4))).to be_falsy
+        expect(permissions.can?(:foo, :with_block, TestObject.new(id: 4))).to be_falsy
       end
     end
   end
