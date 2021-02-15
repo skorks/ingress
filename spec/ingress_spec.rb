@@ -387,7 +387,9 @@ RSpec.describe Ingress do
         define_role_permissions do
           can "*", :wodget
 
-          can "*", TestObject, if: -> (user, record) { record.kind_of?(TestObject) && record.id == 5 }
+          can "*", TestObject, if: -> (user, record) do
+            record.is_a?(Class) ? true : (record.kind_of?(TestObject) && record.id == 5)
+          end
 
           can "*", :with_if_style, if: -> (user, record) { record.kind_of?(TestObject) && record.id == 5 }
           can "*", :with_block do |user, record|
@@ -437,7 +439,7 @@ RSpec.describe Ingress do
       end
 
       it "should be able to do action if Class is provided" do
-        expect(permissions.can?(:with_block, TestObject)).to be_truthy
+        expect(permissions.can?(:foo, TestObject)).to be_truthy
       end
     end
 
