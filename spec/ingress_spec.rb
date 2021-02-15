@@ -387,9 +387,28 @@ RSpec.describe Ingress do
         define_role_permissions do
           can "*", :wodget
 
-          can "*", TestObject, if: -> (user, record) do
-            record.is_a?(Class) ? true : (record.kind_of?(TestObject) && record.id == 5)
+          can :foo, TestObject, if: -> (user, given_subject) do
+            given_subject.kind_of?(TestObject) ? (given_subject.id == 5) : true
           end
+
+          can :bar, TestObject, if_subject_is_an_instance: -> (user, object, option) do
+            object.id == 5
+          end
+
+          can :baz, TestObject, if_subject_is_a_class: -> (user, klass, option) do
+            option[:id] == 9
+          end
+
+          can :foo_bar_baz, TestObject,
+            if: -> (user, given_subject) do
+              given_subject.kind_of?(TestObject) ? (given_subject.id == 5) : true
+            end,
+            if_subject_is_an_instance: -> (user, object, option) do
+              option[:id] == 5
+            end,
+            if_subject_is_a_class: -> (user, klass, option) do
+              option[:id] == 9
+            end
 
           can "*", :with_if_style, if: -> (_user, _action, record) { record.kind_of?(TestObject) && record.id == 5 }
           can "*", :with_block do |_user, _action, record|
@@ -428,10 +447,9 @@ RSpec.describe Ingress do
       expect(permissions.can?(:foo, :bazzer)).to be_falsy
     end
 
-    context "with a condition" do
+    context "with the 'if:' condition" do
       it "user is able to do any action on a thing where the condition is met" do
         expect(permissions.can?(:foo, TestObject.new(id: 5))).to be_truthy
-        expect(permissions.can?(:bar, TestObject.new(id: 5))).to be_truthy
       end
 
       it "user is not able to do any action on a thing where the condition is not met" do
@@ -440,6 +458,61 @@ RSpec.describe Ingress do
 
       it "should be able to do action if Class is provided" do
         expect(permissions.can?(:foo, TestObject)).to be_truthy
+      end
+    end
+
+    context "with the 'if_subject_is_an_instance:' condition" do
+      it "user is able to do any action on a thing where the condition is met" do
+        expect(permissions.can?(:bar, TestObject.new(id: 5))).to be_truthy
+      end
+
+      it "user is not able to do any action on a thing where the condition is not met" do
+        expect(permissions.can?(:bar, TestObject.new(id: 4))).to be_falsy
+      end
+
+      it "user is able to do any action if Class is provided" do
+        expect(permissions.can?(:bar, TestObject)).to be_truthy
+      end
+    end
+
+    context "with the 'if_subject_is_a_class:' condition" do
+      it "user is able to do any action on a thing where the condition is met" do
+        expect(permissions.can?(:baz, TestObject, { id: 9 })).to be_truthy
+      end
+
+      it "user is not able to do any action on a thing where the condition is not met" do
+        expect(permissions.can?(:baz, TestObject, { id: 4 })).to be_falsy
+      end
+
+      it "user is able to do any action if an instance is provided" do
+        expect(permissions.can?(:baz, TestObject.new(id: 9))).to be_truthy
+      end
+    end
+
+    context "with the all the conditions combined" do
+      context "when all the conditions are not met" do
+        it "user is able to do any action on a thing where the condition is met" do
+          expect(permissions.can?(:foo_bar_baz, TestObject.new(id: 5), { id: 5 })).to be_truthy
+          expect(permissions.can?(:foo_bar_baz, TestObject, { id: 9 })).to be_truthy
+        end
+      end
+
+      context "when the 'if:' condition is not met" do
+        it "user is able not to do any action on a thing" do
+          expect(permissions.can?(:foo_bar_baz, TestObject.new(id: 9), { id: 5 })).to be_falsy
+        end
+      end
+
+      context "when the 'if_subject_is_an_instance:' condition is not met" do
+        it "user is able not to do any action on a thing" do
+          expect(permissions.can?(:foo_bar_baz, TestObject.new(id: 5), { id: 9 })).to be_falsy
+        end
+      end
+
+      context "when the 'if_subject_is_a_class:' condition is not met" do
+        it "user is able not to do any action on a thing" do
+          expect(permissions.can?(:foo_bar_baz, TestObject, { id: 10 })).to be_falsy
+        end
       end
     end
 

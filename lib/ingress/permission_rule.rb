@@ -6,7 +6,7 @@ module Ingress
       @allows = allows
       @action = action
       @subject = subject
-      @conditions = [conditions].compact.flatten
+      @conditions = conditions
     end
 
     def allows?
