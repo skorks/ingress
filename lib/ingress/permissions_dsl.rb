@@ -15,15 +15,17 @@ module Ingress
 
     def can(actions, subjects, options = {}, &block)
       for_each_action_and_subject(actions, subjects) do |action, subject|
-        condition = condition_from_options(options, block)
-        permission_repository.add_permission(role_identifier, true, action, subject, condition)
+        conditions = conditions_from(options, block)
+
+        permission_repository.add_permission(role_identifier, true, action, subject, conditions)
       end
     end
 
     def cannot(actions, subjects, options = {}, &block)
       for_each_action_and_subject(actions, subjects) do |action, subject|
-        condition = condition_from_options(options, block)
-        permission_repository.add_permission(role_identifier, false, action, subject, condition)
+        conditions = conditions_from(options, block)
+
+        permission_repository.add_permission(role_identifier, false, action, subject, conditions)
       end
     end
 
@@ -41,9 +43,40 @@ module Ingress
       end
     end
 
-    def condition_from_options(options, block)
-      if_condition = options[:if] || block
-      if_condition.respond_to?(:call) ? if_condition : nil
+    def conditions_from(options, block)
+      generic_condition = generic_condition_from(options[:if] || block)
+      instance_condition = if_subject_is_an_instance_condition_from(options[:if_subject_is_an_instance])
+      class_condition = if_subject_is_a_class_condition_from(options[:if_subject_is_a_class])
+
+      [generic_condition, instance_condition, class_condition].compact
+    end
+
+    def generic_condition_from(callback)
+      callback if callback&.respond_to?(:call)
+    end
+
+    def if_subject_is_an_instance_condition_from(callback)
+      if callback&.respond_to?(:call)
+        lambda do |user, given_subject, option|
+          if [Class, Module].include?(given_subject.class)
+            true
+          else
+            callback.call(user, given_subject, option)
+          end
+        end
+      end
+    end
+
+    def if_subject_is_a_class_condition_from(callback)
+      if callback&.respond_to?(:call)
+        lambda do |user, given_subject, option|
+          if [Class, Module].include?(given_subject.class)
+            callback.call(user, given_subject, option)
+          else
+            true
+          end
+        end
+      end
     end
   end
 end

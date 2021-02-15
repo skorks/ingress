@@ -283,6 +283,66 @@ So now the authorization in your system can be defined in a much more OO way, wi
 
 This framework has no hooks into Rails (these would be trivial to write if necessary, e.g. you can instantiate the `user_permissions` object on your `ApplicationController` and then do the `can?` checks anywhere you want) and can therefore be used with any web framework, or even outside of the context of a web framework (if such a use case makes sense).
 
+### Conditional Lambda
+
+Ingress by default does not know about the subject that is given in the conditional lambda. The given subject can be a Class or an Object and it depends on the user to define the correct lambda to handle the given subject.
+
+For example, given the following `UserPermissions`:
+
+```
+class UserPermissions < Ingress::Permissions
+  define_role_permissions do
+    can :read, Post, if: ->(user, given_subject) do
+      case [user, given_subject]
+      in [_, Post]
+        user.id == given_subject.user_id
+      in [_, Class]
+        true
+      else
+        false
+    end
+  end
+end
+```
+
+This is the result of the defined permissions:
+
+```
+user_permissions = UserPermissions.new(user)
+user_permissions.can?(:read, Post) # returns true
+post = user.posts.first # assume we can get the list of posts form the user object
+user_permissions.can?(:read, post) # returns true
+```
+
+Ingress provides 2 convenient interfaces to apply conditional lambda on a Class or an Instance:
+
+* if_subject_is_an_instance
+* if_subject_is_a_class
+
+These conditional lambdas always take 3 parameters: the `user`, the `subject` (this is either a Class or an Instance), and the `options` (this is additional attributes that may be needed to do the check).
+
+They can be chained together like following:
+
+```
+class UserPermissions < Ingress::Permissions
+  define_role_permissions do
+    can :read, Post,
+      if: ->(user, _post) { !user.id.nil? },
+      if_subject_is_an_instance: ->(user, post, _options) { user.id == post.user_id },
+      if_subject_is_a_class: ->(_user, klass, _options) { klass == Post }
+  end
+end
+```
+
+This is the result of the defined permissions:
+
+```
+user_permissions = UserPermissions.new(user)
+user_permissions.can?(:read, Post) # returns true
+post = user.posts.first # assume we can get the list of posts form the user object
+user_permissions.can?(:read, post) # returns true
+```
+
 ## Development
 
 After checking out the repo, run `script/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `script/console` for an interactive prompt that will allow you to experiment.
