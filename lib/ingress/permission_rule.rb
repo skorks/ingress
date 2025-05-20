@@ -30,7 +30,7 @@ module Ingress
 
     def subject_matches?(given_subject)
       given_subject == subject ||
-        given_subject.class == subject ||
+        given_subject.is_a?(subject) ||
         given_subject == "*" ||
         "*" == subject
     end
