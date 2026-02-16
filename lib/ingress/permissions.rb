@@ -6,13 +6,18 @@ require "ingress/build_permissions_repository_for_role"
 
 module Ingress
   class Permissions
+    # Internal sentinel role used when permissions are defined without an explicit role.
+    # Uses a distinct name to avoid collision with user-defined roles.
+    ANONYMOUS_ROLE = :"__ingress_anonymous__"
+    private_constant :ANONYMOUS_ROLE
+
     class << self
       def permissions_repository
         @permissions_repository ||= PermissionsRepository.new
       end
 
       def inherits(permissions_class)
-        role_identifier = :dummy
+        role_identifier = ANONYMOUS_ROLE
 
         return unless permissions_class
 
@@ -23,7 +28,7 @@ module Ingress
       end
 
       def define_role_permissions(role_identifier = nil, permissions_class = nil, &)
-        role_identifier = :dummy if role_identifier.nil?
+        role_identifier = ANONYMOUS_ROLE if role_identifier.nil?
 
         if permissions_class
           @permissions_repository = permissions_repository.merge(

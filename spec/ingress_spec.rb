@@ -246,6 +246,60 @@ RSpec.describe Ingress do
     end
   end
 
+  describe "when inherits is called with nil" do
+    it "does not raise an error" do
+      expect {
+        Class.new(Ingress::Permissions) do
+          inherits nil
+          define_role_permissions { can :action, :subject }
+        end
+      }.not_to raise_error
+    end
+
+    it "still allows permissions to be defined" do
+      permissions_class = Class.new(Ingress::Permissions) do
+        inherits nil
+        define_role_permissions(:member) { can :action, :subject }
+
+        def user_role_identifiers
+          [:member]
+        end
+      end
+
+      user = TestUser.new(id: 1)
+      permissions = permissions_class.new(user)
+      expect(permissions.can?(:action, :subject)).to be true
+    end
+  end
+
+  describe "when using deeply nested arrays in DSL" do
+    let(:permissions_class) do
+      Class.new(Ingress::Permissions) do
+        define_role_permissions(:member) do
+          can [[[:read, :write]], :delete], :posts
+          can :update, [[:comments, :likes]]
+        end
+
+        def user_role_identifiers
+          [:member]
+        end
+      end
+    end
+    let(:user) { TestUser.new(id: 1) }
+    let(:permissions) { permissions_class.new(user) }
+
+    it "flattens nested action arrays properly" do
+      expect(permissions.can?(:read, :posts)).to be true
+      expect(permissions.can?(:write, :posts)).to be true
+      expect(permissions.can?(:delete, :posts)).to be true
+    end
+
+    it "flattens nested subject arrays properly" do
+      expect(permissions.can?(:update, :comments)).to be true
+      expect(permissions.can?(:update, :likes)).to be true
+    end
+  end
+
   describe "when user has role that role allows everything" do
     let(:admin_permissions_class) do
       Class.new(Ingress::Permissions) do
@@ -569,6 +623,45 @@ RSpec.describe Ingress do
     end
   end
 
+  describe "when condition uses variable arity lambda" do
+    let(:varargs_permissions_class) do
+      Class.new(Ingress::Permissions) do
+        define_role_permissions(:member) do
+          can :action, :subject, if: ->(*args) { args.size >= 2 }
+        end
+
+        def user_role_identifiers
+          user.role_identifiers
+        end
+      end
+    end
+    let(:user) { TestUser.new(id: 1, role_identifiers: [:member]) }
+    let(:permissions) { varargs_permissions_class.new(user) }
+
+    it "handles variable arity conditions correctly" do
+      expect(permissions.can?(:action, :subject)).to be true
+    end
+
+    it "receives user and subject arguments" do
+      # Variable arity lambda with arity -1 should work
+      received_args = nil
+      permissions_class = Class.new(Ingress::Permissions) do
+        define_role_permissions(:member) do
+          can :action, :subject, if: ->(*args) { received_args = args; true }
+        end
+
+        def user_role_identifiers
+          user.role_identifiers
+        end
+      end
+
+      test_permissions = permissions_class.new(user)
+      test_permissions.can?(:action, :subject)
+      expect(received_args).not_to be_nil
+      expect(received_args.size).to be >= 2
+    end
+  end
+
   describe "can_do_anything helper" do
     let(:admin_permissions_class) do
       Class.new(Ingress::Permissions) do
@@ -617,6 +710,46 @@ RSpec.describe Ingress do
 
     it "results in no permissions when not overridden" do
       expect(permissions.can?(:action, :subject)).to be false
+    end
+  end
+
+  describe "when user has nil role identifier" do
+    let(:permissions_class) do
+      Class.new(Ingress::Permissions) do
+        define_role_permissions(:member) do
+          can :action, :subject
+        end
+
+        def user_role_identifiers
+          [nil]
+        end
+      end
+    end
+    let(:user) { TestUser.new(id: 1) }
+    let(:permissions) { permissions_class.new(user) }
+
+    it "denies access for nil role" do
+      expect(permissions.can?(:action, :subject)).to be false
+    end
+  end
+
+  describe "when user has mix of valid and nil role identifiers" do
+    let(:permissions_class) do
+      Class.new(Ingress::Permissions) do
+        define_role_permissions(:member) do
+          can :action, :subject
+        end
+
+        def user_role_identifiers
+          [:member, nil]
+        end
+      end
+    end
+    let(:user) { TestUser.new(id: 1) }
+    let(:permissions) { permissions_class.new(user) }
+
+    it "grants access based on valid role, ignores nil" do
+      expect(permissions.can?(:action, :subject)).to be true
     end
   end
 end
