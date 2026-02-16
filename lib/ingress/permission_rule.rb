@@ -38,6 +38,8 @@ module Ingress
     end
 
     def conditions_match?(user, given_subject, options)
+      return true if conditions.nil? || conditions.empty?
+
       conditions.all? do |condition|
         if condition.arity == 2
           condition.call(user, given_subject)

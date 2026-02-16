@@ -536,4 +536,87 @@ RSpec.describe Ingress do
       end
     end
   end
+
+  describe "when condition raises an exception" do
+    let(:error_permissions_class) do
+      Class.new(Ingress::Permissions) do
+        define_role_permissions(:member) do
+          can :action, :subject, if: ->(_user, _subject) { raise StandardError, "Condition error" }
+        end
+
+        def user_role_identifiers
+          user.role_identifiers
+        end
+      end
+    end
+    let(:user) { TestUser.new(id: 1, role_identifiers: [:member]) }
+    let(:permissions) { error_permissions_class.new(user) }
+
+    it "returns false when condition raises exception" do
+      # Suppress stderr output during test
+      allow($stderr).to receive(:write)
+      expect(permissions.can?(:action, :subject)).to be false
+    end
+
+    it "does not raise the exception to the caller" do
+      # Suppress stderr output during test
+      allow($stderr).to receive(:write)
+      expect { permissions.can?(:action, :subject) }.not_to raise_error
+    end
+
+    it "logs error message to stderr" do
+      expect { permissions.can?(:action, :subject) }.to output(/Condition error/).to_stderr
+    end
+  end
+
+  describe "can_do_anything helper" do
+    let(:admin_permissions_class) do
+      Class.new(Ingress::Permissions) do
+        define_role_permissions(:admin) do
+          can_do_anything
+        end
+
+        def user_role_identifiers
+          user.role_identifiers
+        end
+      end
+    end
+    let(:user) { TestUser.new(id: 1, role_identifiers: [:admin]) }
+    let(:permissions) { admin_permissions_class.new(user) }
+
+    it "is equivalent to wildcards for any action" do
+      expect(permissions.can?(:create, :anything)).to be true
+      expect(permissions.can?(:read, :anything)).to be true
+      expect(permissions.can?(:update, :anything)).to be true
+      expect(permissions.can?(:delete, :anything)).to be true
+    end
+
+    it "is equivalent to wildcards for any subject" do
+      expect(permissions.can?(:action, :posts)).to be true
+      expect(permissions.can?(:action, :comments)).to be true
+      expect(permissions.can?(:action, TestObject)).to be true
+      expect(permissions.can?(:action, TestObject.new)).to be true
+    end
+  end
+
+  describe "default user_role_identifiers behavior" do
+    let(:base_permissions_class) do
+      Class.new(Ingress::Permissions) do
+        define_role_permissions do
+          can :action, :subject
+        end
+        # Intentionally not overriding user_role_identifiers
+      end
+    end
+    let(:user) { TestUser.new(id: 1) }
+    let(:permissions) { base_permissions_class.new(user) }
+
+    it "returns empty array by default" do
+      expect(permissions.user_role_identifiers).to eq([])
+    end
+
+    it "results in no permissions when not overridden" do
+      expect(permissions.can?(:action, :subject)).to be false
+    end
+  end
 end
