@@ -7,3 +7,6 @@
 /spec/reports/
 /tmp/
 tags
+
+# RSpec status persistence
+spec/examples.txt
