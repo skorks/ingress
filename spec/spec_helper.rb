@@ -1,2 +1,30 @@
-$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
-require 'ingress'
+# frozen_string_literal: true
+
+require "simplecov"
+SimpleCov.start do
+  add_filter "/spec/"
+end
+
+require "ingress"
+
+RSpec.configure do |config|
+  # Modern expect syntax only
+  config.expect_with :rspec do |expectations|
+    expectations.include_chain_clauses_in_custom_matcher_descriptions = true
+    expectations.syntax = :expect
+  end
+
+  # Modern mock syntax
+  config.mock_with :rspec do |mocks|
+    mocks.verify_partial_doubles = true
+  end
+
+  # Better output and test management
+  config.shared_context_metadata_behavior = :apply_to_host_groups
+  config.filter_run_when_matching :focus
+  config.example_status_persistence_file_path = "spec/examples.txt"
+  config.disable_monkey_patching!
+  config.warnings = true
+  config.order = :random
+  Kernel.srand config.seed
+end
