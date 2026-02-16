@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "ingress/permissions_repository"
 
 module Ingress

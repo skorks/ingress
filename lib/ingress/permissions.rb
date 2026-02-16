@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "ingress/permissions_repository"
 require "ingress/copy_permissions_repository_into_role"
 require "ingress/build_permissions_repository_for_role"

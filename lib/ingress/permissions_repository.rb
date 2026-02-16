@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "ingress/permission_rule"
 
 module Ingress

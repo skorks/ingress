@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Ingress
   class PermissionRule
     attr_reader :action, :subject, :conditions
