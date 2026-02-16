@@ -35,6 +35,7 @@ module Ingress
 
     def for_each_action_and_subject(actions, subjects)
       return unless block_given?
+
       actions = [actions].flatten
       subjects = [subjects].flatten
 
@@ -54,29 +55,25 @@ module Ingress
     end
 
     def generic_condition_from(callback)
-      callback if callback&.respond_to?(:call)
+      callback if callback.respond_to?(:call)
     end
 
     def if_subject_is_an_instance_condition_from(callback)
-      if callback&.respond_to?(:call)
-        lambda do |user, given_subject, option|
-          if [Class, Module].include?(given_subject.class)
-            true
-          else
-            callback.call(user, given_subject, option)
-          end
-        end
+      return unless callback.respond_to?(:call)
+
+      lambda do |user, given_subject, option|
+        [Class, Module].include?(given_subject.class) || callback.call(user, given_subject, option)
       end
     end
 
     def if_subject_is_a_class_condition_from(callback)
-      if callback&.respond_to?(:call)
-        lambda do |user, given_subject, option|
-          if [Class, Module].include?(given_subject.class)
-            callback.call(user, given_subject, option)
-          else
-            true
-          end
+      return unless callback.respond_to?(:call)
+
+      lambda do |user, given_subject, option|
+        if [Class, Module].include?(given_subject.class)
+          callback.call(user, given_subject, option)
+        else
+          true
         end
       end
     end

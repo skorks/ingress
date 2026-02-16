@@ -6,9 +6,9 @@ module Ingress
   module Services
     class BuildPermissionsRepositoryForRole
       class << self
-        def perform(role_identifier, &block)
+        def perform(role_identifier, &)
           permissions_dsl = PermissionsDsl.new(role_identifier)
-          permissions_dsl.instance_eval(&block)
+          permissions_dsl.instance_eval(&)
           permissions_dsl.permission_repository
         end
       end

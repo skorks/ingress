@@ -50,9 +50,7 @@ module Ingress
     def find_rules(role_identifier, action, subject)
       rules = []
       rules += @role_subject_action_rule[role_identifier][subject][action]
-      unless subject == "*"
-        rules += @role_subject_action_rule[role_identifier][subject.class][action]
-      end
+      rules += @role_subject_action_rule[role_identifier][subject.class][action] unless subject == "*"
 
       rules
     end

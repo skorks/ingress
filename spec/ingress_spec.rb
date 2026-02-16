@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 require "securerandom"
 
@@ -51,9 +53,9 @@ RSpec.describe Ingress do
           can :create, TestObject
           can :destroy, TestObject
 
-          can :update, TestObject, if: -> (user, object) { user.id == object.user_id unless object.is_a?(Class) }
-          cannot %i[update destroy], TestObject, if: -> (user, object) { object.read_only unless object.is_a?(Class)}
-          cannot '*', '*', if: -> (user, _object) { user.disabled }
+          can :update, TestObject, if: ->(user, object) { user.id == object.user_id unless object.is_a?(Class) }
+          cannot %i[update destroy], TestObject, if: ->(_user, object) { object.read_only unless object.is_a?(Class) }
+          cannot "*", "*", if: ->(user, _object) { user.disabled }
         end
       end
     end
@@ -161,7 +163,7 @@ RSpec.describe Ingress do
         end
       end
     end
-    let(:user) { TestUser.new(id: 5, role_identifiers: [:member, :subscriber]) }
+    let(:user) { TestUser.new(id: 5, role_identifiers: %i[member subscriber]) }
     let(:permissions) { user_permissions_class.new(user) }
 
     before do
@@ -236,7 +238,7 @@ RSpec.describe Ingress do
     end
 
     context "and user has 2 roles and one has permissions that are taken away by another" do
-      let(:user) { TestUser.new(id: 5, role_identifiers: [:member, :special_member]) }
+      let(:user) { TestUser.new(id: 5, role_identifiers: %i[member special_member]) }
 
       it "user is able to do things that are taken away by one of the roles" do
         expect(permissions.can?(:create, :member_stuff)).to be_truthy
@@ -335,7 +337,7 @@ RSpec.describe Ingress do
       Class.new(Ingress::Permissions) do
         define_role_permissions do
           can :create, "*"
-          can :destroy, "*", if: -> (user, record) { record == TestObject || record.kind_of?(TestObject) }
+          can :destroy, "*", if: ->(_user, record) { record == TestObject || record.is_a?(TestObject) }
         end
       end
     end
@@ -387,32 +389,32 @@ RSpec.describe Ingress do
         define_role_permissions do
           can "*", :wodget
 
-          can :foo, TestObject, if: -> (user, given_subject) do
-            given_subject.kind_of?(TestObject) ? (given_subject.id == 5) : true
-          end
+          can :foo, TestObject, if: lambda { |_user, given_subject|
+            given_subject.is_a?(TestObject) ? (given_subject.id == 5) : true
+          }
 
-          can :bar, TestObject, if_subject_is_an_instance: -> (user, object, option) do
+          can :bar, TestObject, if_subject_is_an_instance: lambda { |_user, object, _option|
             object.id == 5
-          end
+          }
 
-          can :baz, TestObject, if_subject_is_a_class: -> (user, klass, option) do
+          can :baz, TestObject, if_subject_is_a_class: lambda { |_user, _klass, option|
             option[:id] == 9
-          end
+          }
 
           can :foo_bar_baz, TestObject,
-            if: -> (user, given_subject) do
-              given_subject.kind_of?(TestObject) ? (given_subject.id == 5) : true
-            end,
-            if_subject_is_an_instance: -> (user, object, option) do
-              option[:id] == 5
-            end,
-            if_subject_is_a_class: -> (user, klass, option) do
-              option[:id] == 9
-            end
+              if: lambda { |_user, given_subject|
+                given_subject.is_a?(TestObject) ? (given_subject.id == 5) : true
+              },
+              if_subject_is_an_instance: lambda { |_user, _object, option|
+                option[:id] == 5
+              },
+              if_subject_is_a_class: lambda { |_user, _klass, option|
+                option[:id] == 9
+              }
 
-          can "*", :with_if_style, if: -> (_user, _action, record) { record.kind_of?(TestObject) && record.id == 5 }
+          can "*", :with_if_style, if: ->(_user, _action, record) { record.is_a?(TestObject) && record.id == 5 }
           can "*", :with_block do |_user, _action, record|
-            record.kind_of?(TestObject) && record.id == 5
+            record.is_a?(TestObject) && record.id == 5
           end
         end
       end

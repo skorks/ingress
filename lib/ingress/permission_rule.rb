@@ -27,14 +27,14 @@ module Ingress
     def action_matches?(given_action)
       given_action == action ||
         given_action == "*" ||
-        "*" == action
+        action == "*"
     end
 
     def subject_matches?(given_subject)
       given_subject == subject ||
         (subject.is_a?(Class) || subject.is_a?(Module) ? given_subject.is_a?(subject) : false) ||
         given_subject == "*" ||
-        "*" == subject
+        subject == "*"
     end
 
     def conditions_match?(user, given_subject, options)
@@ -45,7 +45,7 @@ module Ingress
           condition.call(user, given_subject, options)
         end
       end
-    rescue => e
+    rescue StandardError => e
       log_error(e)
       false
     end
@@ -55,8 +55,8 @@ module Ingress
         Rails.logger.error error.message
         Rails.logger.error error.backtrace.join("\n")
       else
-        $stderr.puts error.message
-        $stderr.puts error.backtrace.join("\n")
+        warn error.message
+        warn error.backtrace.join("\n")
       end
     end
   end

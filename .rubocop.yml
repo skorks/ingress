@@ -1,6 +1,4 @@
 AllCops:
-  Plugins:
-    - rubocop-rspec
   TargetRubyVersion: 3.3
   NewCops: enable
   SuggestExtensions: false
@@ -24,9 +22,3 @@ Metrics/BlockLength:
   Exclude:
     - 'spec/**/*'
     - '*.gemspec'
-
-RSpec/MultipleExpectations:
-  Max: 5
-
-RSpec/ExampleLength:
-  Max: 15

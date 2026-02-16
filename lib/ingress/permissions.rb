@@ -14,27 +14,29 @@ module Ingress
       def inherits(permissions_class)
         role_identifier = :dummy
 
-        if permissions_class
-          @permissions_repository = permissions_repository.merge(
-            Services::CopyPermissionsRepositoryIntoRole.perform(role_identifier, permissions_class.permissions_repository),
-          )
-        end
+        return unless permissions_class
+
+        @permissions_repository = permissions_repository.merge(
+          Services::CopyPermissionsRepositoryIntoRole.perform(role_identifier,
+                                                              permissions_class.permissions_repository)
+        )
       end
 
-      def define_role_permissions(role_identifier = nil, permissions_class = nil, &block)
-        if role_identifier.nil?
-          role_identifier = :dummy
-        end
+      def define_role_permissions(role_identifier = nil, permissions_class = nil, &)
+        role_identifier = :dummy if role_identifier.nil?
 
         if permissions_class
           @permissions_repository = permissions_repository.merge(
-            Services::CopyPermissionsRepositoryIntoRole.perform(role_identifier, permissions_class.permissions_repository),
+            Services::CopyPermissionsRepositoryIntoRole.perform(role_identifier,
+                                                                permissions_class.permissions_repository)
           )
         end
 
-        if block_given?
-          @permissions_repository = permissions_repository.merge(Services::BuildPermissionsRepositoryForRole.perform(role_identifier, &block))
-        end
+        return unless block_given?
+
+        @permissions_repository = permissions_repository.merge(Services::BuildPermissionsRepositoryForRole.perform(
+                                                                 role_identifier, &
+                                                               ))
       end
     end
 
