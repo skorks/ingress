@@ -1,7 +1,6 @@
-require:
-  - rubocop-rspec
-
 AllCops:
+  Plugins:
+    - rubocop-rspec
   TargetRubyVersion: 3.3
   NewCops: enable
   SuggestExtensions: false
