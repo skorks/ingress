@@ -1,7 +1,8 @@
-# coding: utf-8
-lib = File.expand_path('../lib', __FILE__)
+# frozen_string_literal: true
+
+lib = File.expand_path("lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'ingress/version'
+require "ingress/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "ingress"
@@ -18,7 +19,7 @@ Gem::Specification.new do |spec|
                          "source_code_uri" => "https://github.com/skorks/ingress",
                        }
 
-  spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
+  spec.files         = Dir.glob("lib/**/*") + ["README.md", "LICENSE.txt", "CLAUDE.md"]
   spec.bindir        = "bin"
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
